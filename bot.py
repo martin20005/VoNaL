@@ -1,11 +1,68 @@
 import discord
 from discord.ext import commands
+import json
 
-bot = commands.Bot(command_prefix = '|')
-TOKEN = 'NzkxMzI5Mjc4ODgwMTIwODMy.X-Nk0g.E3ACxpYGqEQhxc15EClKCNCB988'
-#TODO hide token
 
-pricePerSwear = 20
+
+
+# getting data from vonal.json
+ 
+def get_prefix():
+    with open('vonal.json', 'r') as f:
+        data = json.load(f)
+        return data['prefix']
+
+def get_token():
+    with open('vonal.json', 'r') as f:
+        data = json.load(f)
+        return data['token']
+        
+bot = commands.Bot(command_prefix = get_prefix())
+TOKEN = get_token()
+
+def get_price():
+    with open('vonal.json', 'r') as f:
+        data = json.load(f)
+        return data['price']
+
+def set_price(new_price):
+    with open('vonal.json', 'r') as f:
+        data = json.load(f)
+
+    data['price'] = new_price
+
+    with open('vonal.json', 'w') as f:
+        json.dump(data, f, indent=4)
+
+
+def add_lines(main_name, count):
+    prev_score = -1
+    with open('vonal.json', 'r') as f:
+        data = json.load(f)
+        for p in data['people']:
+            if p['name'] == main_name:
+                prev_score = p['score']
+                p['score'] = prev_score + count
+                break
+        if prev_score == -1:
+            print('Who is dat?')
+
+    with open('vonal.json', 'w') as f:
+        json.dump(data, f, indent = 4)
+
+def get_main_name(name):
+    with open('vonal.json', 'r') as f:
+        data = json.load(f)
+        for p in data['people']:
+            for alias in p['aliases']:
+                if alias == name.lower():
+                    return p['name']
+
+
+
+
+
+# events and command handling
 
 @bot.event
 async def on_ready():
@@ -24,18 +81,29 @@ async def ping(ctx):
 async def quit(ctx):
     await ctx.send('See you soon!')
     await bot.change_presence(status=discord.Status.offline)
-    print('VoNaL left')
     # Note that VoNaL doesn't actually leave the server
 
 @bot.command()
 async def setprice(ctx, price=20):
-    pricePerSwear = price
-    await ctx.send(f'The new price of a swear is {pricePerSwear}')
+    if price > 0:
+        set_price(price)
+    await ctx.send(f'The new price of a swear is {get_price()}')
 
 @bot.command(aliases = ['', '+'])
-async def add(ctx):
+async def add(ctx, *, msg):
+    count = 0
+    for word in msg:
+        for ch in word:
+            if ch == '|':
+                count += 1
+    real_name = get_main_name(ctx.author.name)
+    add_lines(real_name, count)
+
     await ctx.send('I tried adding a |')
     #TODO add a | to sender
+
+
+
 
 
 
