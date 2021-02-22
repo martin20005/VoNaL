@@ -121,20 +121,22 @@ async def setprice(ctx, price : int):
 @bot.command(aliases = [''], help = '`| 3 @Martin` adds 3 dashes to Martin')
 async def add(ctx, count = 1, *members : discord.Member):
 
-    for m in members:
-        main_name = get_main_name(m.name)
-        if main_name != None:
-            add_lines(main_name, count)
+    if count > 0:
 
-    if len(members) > 0:
-        mentionstring = ''
         for m in members:
-            mentionstring = mentionstring + f'{m.mention} '
-        await ctx.send(f'I added {count} | to {mentionstring}')
-    else:
-        main_name = get_main_name(ctx.author.name)
-        add_lines(main_name, count)
-        await ctx.send(f'I added {count} | to {ctx.author.mention}')
+            main_name = get_main_name(m.name)
+            if main_name != None:
+                add_lines(main_name, count)
+
+        if len(members) > 0:
+            mentionstring = ''
+            for m in members:
+                mentionstring = mentionstring + f'{m.mention} '
+            await ctx.send(f'I added {count} | to {mentionstring}')
+        else:
+            main_name = get_main_name(ctx.author.name)
+            add_lines(main_name, count)
+            await ctx.send(f'I added {count} | to {ctx.author.mention}')
 
 
 # increments score of sender
@@ -150,9 +152,10 @@ async def inc(ctx):
 @bot.command(aliases = ['+='], help = 'Adds the given number of dashes to your score')
 async def incmany(ctx, count : int):
 
-    main_name = get_main_name(ctx.author.name)
-    add_lines(main_name, count)
-    await ctx.send(f'I added {count} | to {ctx.author.mention}')
+    if count > 0:
+        main_name = get_main_name(ctx.author.name)
+        add_lines(main_name, count)
+        await ctx.send(f'I added {count} | to {ctx.author.mention}')
 
 
 # displaying current score
@@ -170,6 +173,16 @@ async def score(ctx):
 
     await ctx.send(disp)
 
+
+@bot.event
+async def on_message(msg):
+    if msg.author == bot.user:
+        return
+    if not msg.content.startswith(get_prefix()):
+        return
+    
+    await bot.process_commands(msg)
+    await msg.delete()
 
 
 bot.run(get_token())
